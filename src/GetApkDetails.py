@@ -32,12 +32,14 @@ apkFilePath = ''    #apk file path
 unpackPath = ''     #apk unpack file path
 
 def getAppNameAndAppIcon(apkFilePath,unpackPath):
+
+    dir_path = os.path.abspath('.')
     
-    xmlStr = commands.getoutput('java -jar /usr/local/GetApkDetails/AXMLPrinter2.jar '+convertFilePath(unpackPath)+'/AndroidManifest.xml')
+    xmlStr = commands.getoutput('java -jar '+dir_path+'/AXMLPrinter2.jar '+convertFilePath(unpackPath)+'/AndroidManifest.xml')
 
     sid,iconId,pkg,versionCode,versionName = QuotationHandler().parseXML(xmlStr)#get nameID and iconID
     
-    output = commands.getoutput('aapt dump --values resources '+convertFilePath(apkFilePath))
+    output = commands.getoutput('./aapt dump --values resources '+convertFilePath(apkFilePath))
     lines = output.splitlines()
 
     appNameArray = []  #app name array
@@ -114,7 +116,6 @@ import os,glob
 
 def getIconArray(iconFileName,unpackPath):
     iconArray = []
-
     for root, dirs, files in os.walk(unpackPath): 
         '''
         print os.path.join(root, iconFileName)
@@ -167,7 +168,7 @@ def getOtherDetails(apkFilePath,unpackPath):
     return usesPermissionArray , sdkVersion , localesArray , fileSize , signaturesMD5
 
 #获取apk详细信息
-def getApkDetails(apkFilePath,unpackPath):
+def getSingleApkDetails(apkFilePath,unpackPath):
     apkDetails = {}
     
     apkDetails['apkFileName'] = os.path.basename(apkFilePath)
@@ -230,6 +231,29 @@ def getApkDetails(apkFilePath,unpackPath):
 def printHelp():
     print u'缺少参数\r\n目前支持的功能:\r\n单apk文件解析:python <base-path>/GetApkDetails <apk file path>\r\n多apk文件解析:python <base-path>/GetApkDetails <apk filedir path>\r\n文件删除:python <base-path>/GetApkDetails -D <file path>'
 
+
+def getAllApkDetails(apkFileOrDir):
+    apkDetailsArray = [] #返回的json对象
+            
+    if os.path.isdir(apkFileOrDir): #目录
+        for root, dirs, files in os.walk(apkFileOrDir): 
+            for f in files:
+                if cmp(os.path.splitext(f)[1],'.apk') == 0 :
+                    apkFilePath = os.path.join(root, f)
+                    unpackPath = os.path.join(root, f) +'-unpack'
+                            
+                    apkDetails = getSingleApkDetails(apkFilePath,unpackPath)
+                    apkDetailsArray.append(apkDetails)               
+    else: #文件
+        apkFilePath = apkFileOrDir;
+        unpackPath = apkFilePath+'-unpack';
+                
+        apkDetails = getSingleApkDetails(apkFilePath,unpackPath)
+        apkDetailsArray.append(apkDetails)
+    
+    return apkDetailsArray  
+
+
 #程序主方法
 def main():    
     if len(sys.argv) < 2 :#若命令参数小于2
@@ -262,96 +286,10 @@ def main():
             if os.path.exists(apkFileOrDir) != True:
                 printHelp()
                 return 2
-            
-            apkDetailsArray = [] #返回的json对象
-            
-            if os.path.isdir(apkFileOrDir): #目录
-                for root, dirs, files in os.walk(apkFileOrDir): 
-                    for f in files:
-                        if cmp(os.path.splitext(f)[1],'.apk') == 0 :
-    
-                            apkFilePath = os.path.join(root, f)
-                            unpackPath = os.path.join(root, f) +'-unpack'
-                            
-                            apkDetails = getApkDetails(apkFilePath,unpackPath)
-                            apkDetailsArray.append(apkDetails)
-                
-                jsonResult = json.dumps(apkDetailsArray)
-
-                
-            else: #文件
-                
-                if apkFileOrDir.endswith('.zip'):  #zip文件包
-                    '''  支持中文目录部分
-                    if unzip_file_into_dir(apkFileOrDir, apkFileOrDir+'-unzip') == True:
-                        commands.getstatusoutput('rm -rf %s'%convertFilePath(apkFileOrDir))
-                        
-                        apkFileOrDir = apkFileOrDir+'-unzip'
-                        
-                        for root, dirs, files in os.walk(apkFileOrDir): 
-                            for f in files:
-                                if cmp(os.path.splitext(f)[1],'.apk') == 0 :
-            
-                                    apkFilePath = os.path.join(root, f)
-                                    #文件重命名
-                                    if os.path.isfile(apkFilePath) == True :
-                                        apkFilePathNew = '%s_%s%d%s'%(os.path.splitext(apkFilePath)[0],str(time.time()).replace('.',''),random.randint(10000,99999),os.path.splitext(apkFilePath)[1])
-                                        os.rename(apkFilePath,apkFilePathNew)
-                                        apkFilePath = apkFilePathNew
-                                    
-                                    unpackPath = apkFilePath +'-unpack'
-                                    
-                                    apkDetails = getApkDetails(apkFilePath,unpackPath)
-                                    apkDetailsArray.append(apkDetails)
-                        
-                        jsonResult = json.dumps(apkDetailsArray)
-
-                    else :
-                        printHelp()
-                        return 2
-                    '''
-                    commands.getstatusoutput('rm -rf %s'%convertFilePath(apkFileOrDir+'-unzip'))
-                    #解zip包
-                    status,output = commands.getstatusoutput('/usr/bin/unzip %s -d %s'%(convertFilePath(apkFileOrDir),convertFilePath(apkFileOrDir+'-unzip')))
-                    if status == 0:
-                        commands.getstatusoutput('rm -rf %s'%convertFilePath(apkFileOrDir))
-                        
-                        apkFileOrDir = apkFileOrDir+'-unzip'
-                        
-                        for root, dirs, files in os.walk(apkFileOrDir): 
-                            for f in files:
-                                if cmp(os.path.splitext(f)[1],'.apk') == 0 :
-            
-                                    apkFilePath = os.path.join(root, f)
-                                    #文件重命名
-                                    if os.path.isfile(apkFilePath) == True :
-                                        apkFilePathNew = '%s_%s%d%s'%(os.path.splitext(apkFilePath)[0],str(time.time()).replace('.',''),random.randint(10000,99999),os.path.splitext(apkFilePath)[1])
-                                        os.rename(apkFilePath,apkFilePathNew)
-                                        apkFilePath = apkFilePathNew
-                                    
-                                    unpackPath = apkFilePath +'-unpack'
-                                    
-                                    apkDetails = getApkDetails(apkFilePath,unpackPath)
-                                    apkDetailsArray.append(apkDetails)#制定目录下所有apk解包信息数组
-                        
-                        jsonResult = json.dumps(apkDetailsArray)#详细信息数组转成json串
-
-                    else :
-                        printHelp()
-                        return 2
-                    
-                else:
-                
-                    apkFilePath = apkFileOrDir;
-                    unpackPath = apkFilePath+'-unpack';
-                
-                    apkDetails = getApkDetails(apkFilePath,unpackPath)
-                    apkDetailsArray.append(apkDetails)
-                    jsonResult = json.dumps(apkDetailsArray)
-        
-            
-            print jsonResult  
-            
+            else:
+                apkDetailsArray = getAllApkDetails(apkFileOrDir)
+                jsonResult = json.dumps(apkDetailsArray)  
+                print jsonResult
         else:
             printHelp()
             return 2

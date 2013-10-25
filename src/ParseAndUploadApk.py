@@ -8,29 +8,40 @@ import os
 from GetApkDetails import getAllApkDetails
 from OssUploadApk import uploadApk
 
+sep = "============================================"
+
 def ParseAndUploadApk(apkFileOrDir) :
     apkDetailsArray = getAllApkDetails(apkFileOrDir)
     for apkDetails in apkDetailsArray :
         iconArray = apkDetails['iconFileArray']
         nameArray = apkDetails['appNameArray']
-        apk_name = apkDetails['apkFilePath']
-        print apk_name
-        print iconArray
-        print nameArray
-        print apkDetails['pkg']
-        print apkDetails['versionCode']
-        print apkDetails['versionName']
-        print apkDetails['fileSize']
+        apk_name = apkDetails['apkFileName']
+        apk_path = apkDetails['apkFilePath']
         icon = iconArray[0]
-        name = nameArray[0]
-        icon_name = os.path.split(icon)[1]
+        icon_name = os.path.splitext(apk_name)[0]
         icon_ext = os.path.splitext(icon)[1]
-        new_icon = os.path.join("./", name+icon_ext)
-        print new_icon
+        new_icon = os.path.join("./", icon_name+icon_ext)
         open(new_icon, "wb").write(open(icon, "rb").read()) 
-        uploadApk(new_icon)
+        icon_url = uploadApk(new_icon)
         os.remove(new_icon)
-        uploadApk(apk_name)
+        apk_url = uploadApk(apk_path)
+
+        name_array_string = ''
+        for name in nameArray:
+            if nameArray[-1] == name:
+                name_array_string += '%s' % name
+            else:
+                name_array_string += '%s, ' % name
+
+        print sep
+        print "应用名称(app_name): [%s]"%name_array_string
+        print "安装包名称(package_name): %s"%apkDetails['pkg']
+        print "应用版本号(version_code): %s"%apkDetails['versionCode']
+        print "应用版本名称(version_name): %s"%apkDetails['versionName']
+        print "安装包大小(apk_size): %s"%apkDetails['fileSize']
+        print "应用图标下载链接(icon_url): %s"%icon_url
+        print "安装包下载链接(apk_url): %s"%apk_url
+        print sep
 
     jsonResult = json.dumps(apkDetailsArray)
     return jsonResult

@@ -1,3 +1,35 @@
+FileManager (http://hufeng.info) "Selected App/Game Center" Server Management：
+
+1. 从游戏开发商获取安装包。放入本地电脑一个指定的目录，例如/home/hufeng/apks/
+
+2. 本地电脑安装python库，请使用2.5.*-2.7.*版本。打开附件中的程序，打开Terminal或者cmd进入到ParseandUploadApk/src/目录下，运行如下命令：
+python PasreAndUploadApk.py /home/hufeng/apks/
+
+脚本会将/home/hufeng/apks/目录下的所有apk及应用的图标文件会被上传到我们在阿里云OSS上开通的存储服务上。脚本运行完后，在当前目前下有生成parse_and_upload.txt的文本文件，里面提取到的APK信息。如下所示:
+
+============================================
+应用名称(app_name): [天天酷跑]
+安装包名称(package_name): com.tencent.pao
+应用版本号(version_code): 10
+应用版本名称(version_name): 1.0.6.0
+安装包大小(apk_size): 31.396115MB
+应用图标下载链接(icon_url): http://fm-selected.oss.aliyuncs.com/tiantiankupao.png
+安装包下载链接(apk_url): http://fm-selected.oss.aliyuncs.com/tiantiankupao.apk
+============================================
+
+Please note: you should open an account on Aliyun. And get all the information needed for src/OssUploadApk.py
+
+=============================================
+#ACCESS_ID, SECRET_ACCESS_KEY, APK_BUCKET 默认是空，请填入您申请的正确的ID和KEY.
+#HOST = ""
+#ACCESS_ID = ""
+#SECRECT_ACCESS_KEY = ""
+#APK_BUCKET = ""
+==============================================
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~old~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 【项目介绍】：
 	在以前的某个安卓市场的项目中的一部分功能。主要服务于服务器端批量自动获取apk软件信息功能模块。
 
